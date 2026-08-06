@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>MindAR — видео на странице каталога</title>
+
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+        font-family: system-ui, sans-serif;
+      }
+
+      #hint {
+        position: fixed;
+        z-index: 10;
+        left: 50%;
+        bottom: max(20px, env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        width: max-content;
+        max-width: calc(100% - 40px);
+        box-sizing: border-box;
+        padding: 10px 14px;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.65);
+        border-radius: 10px;
+        text-align: center;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="hint">Наведите камеру на страницу каталога</div>
+
+    <a-scene
+      mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1; filterMinCF: 0.001; filterBeta: 0.01"
+      color-space="sRGB"
+      renderer="colorManagement: true; physicallyCorrectLights: true"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+      embedded
+    >
+      <a-assets timeout="15000">
+        <video id="video-water" src="./video_water.mp4" preload="auto" muted playsinline webkit-playsinline crossorigin="anonymous" loop></video>
+        <video id="video-ring" src="./video_ring.mp4" preload="auto" muted playsinline webkit-playsinline crossorigin="anonymous" loop></video>
+        <video id="video-disk" src="./video_disk.mp4" preload="auto" muted playsinline webkit-playsinline crossorigin="anonymous" loop></video>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity class="ar-target" data-video="video-water" data-target-height="1.414027" mindar-image-target="targetIndex: 0">
+        <a-plane color="#000" position="0 0 0.005" width="1" height="1.414027" material="shader: flat; side: double"></a-plane>
+        <a-video src="#video-water" position="0 0 0.01" width="1" height="1" material="shader: flat; side: double"></a-video>
+      </a-entity>
+
+      <a-entity class="ar-target" data-video="video-ring" data-target-height="1.414027" mindar-image-target="targetIndex: 1">
+        <a-plane color="#000" position="0 0 0.005" width="1" height="1.414027" material="shader: flat; side: double"></a-plane>
+        <a-video src="#video-ring" position="0 0 0.01" width="1" height="1" material="shader: flat; side: double"></a-video>
+      </a-entity>
+
+      <a-entity class="ar-target" data-video="video-disk" data-target-height="1.413761" mindar-image-target="targetIndex: 2">
+        <a-plane color="#000" position="0 0 0.005" width="1" height="1.413761" material="shader: flat; side: double"></a-plane>
+        <a-video src="#video-disk" position="0 0 0.01" width="1" height="1" material="shader: flat; side: double"></a-video>
+      </a-entity>
+    </a-scene>
+
+    <script>
+      const targets = document.querySelectorAll(".ar-target");
+      const videos = document.querySelectorAll("video");
+      const hint = document.querySelector("#hint");
+      let activeVideo = null;
+
+      function stopVideo(video) {
+        video.pause();
+        video.currentTime = 0;
+      }
+
+      function fitVideo(target, video) {
+        if (!video.videoWidth || !video.videoHeight) return;
+
+        const plane = target.querySelector("a-video");
+        const targetWidth = 1;
+        const targetHeight = Number(target.dataset.targetHeight);
+        const videoAspect = video.videoWidth / video.videoHeight;
+        const targetAspect = targetWidth / targetHeight;
+
+        if (videoAspect > targetAspect) {
+          plane.setAttribute("width", targetWidth);
+          plane.setAttribute("height", targetWidth / videoAspect);
+        } else {
+          plane.setAttribute("height", targetHeight);
+          plane.setAttribute("width", targetHeight * videoAspect);
+        }
+      }
+
+      videos.forEach((video) => {
+        // Эти свойства важны для autoplay в Safari, даже при наличии атрибутов.
+        video.muted = true;
+        video.playsInline = true;
+      });
+
+      targets.forEach((target) => {
+        const video = document.querySelector(`#${target.dataset.video}`);
+        const updateVideoSize = () => fitVideo(target, video);
+
+        if (video.readyState >= 1) updateVideoSize();
+        else video.addEventListener("loadedmetadata", updateVideoSize, { once: true });
+
+        target.addEventListener("targetFound", async () => {
+          videos.forEach(stopVideo);
+          activeVideo = video;
+          hint.hidden = true;
+
+          try {
+            await video.play();
+          } catch (error) {
+            hint.hidden = false;
+            hint.textContent = "Коснитесь экрана, чтобы запустить видео";
+          }
+        });
+
+        target.addEventListener("targetLost", () => {
+          stopVideo(video);
+          if (activeVideo === video) activeVideo = null;
+          hint.hidden = false;
+          hint.textContent = "Наведите камеру на страницу каталога";
+        });
+      });
+
+      // Запасной жест для строгих настроек autoplay на iPhone.
+      document.addEventListener(
+        "click",
+        () => {
+          if (activeVideo && activeVideo.paused) activeVideo.play();
+        },
+        { passive: true }
+      );
+    </script>
+  </body>
+</html>
