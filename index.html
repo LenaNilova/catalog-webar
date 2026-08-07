@@ -16,8 +16,20 @@
         height: 100%;
         margin: 0;
         overflow: hidden;
-        background: #000;
+        background: transparent;
         font-family: system-ui, sans-serif;
+      }
+
+      a-scene {
+        position: fixed;
+        inset: 0;
+        width: 100% !important;
+        height: 100% !important;
+        background: transparent !important;
+      }
+
+      .a-canvas {
+        background: transparent !important;
       }
 
       #hint {
@@ -44,7 +56,7 @@
     <a-scene
       mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1; filterMinCF: 0.001; filterBeta: 0.01"
       color-space="sRGB"
-      renderer="colorManagement: true; physicallyCorrectLights: true"
+      renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
       embedded
@@ -58,17 +70,14 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity class="ar-target" data-video="video-water" data-target-height="1.414027" mindar-image-target="targetIndex: 0">
-        <a-plane color="#000" position="0 0 0.005" width="1" height="1.414027" material="shader: flat; side: double"></a-plane>
         <a-video src="#video-water" position="0 0 0.01" width="1" height="1" material="shader: flat; side: double"></a-video>
       </a-entity>
 
       <a-entity class="ar-target" data-video="video-ring" data-target-height="1.414027" mindar-image-target="targetIndex: 1">
-        <a-plane color="#000" position="0 0 0.005" width="1" height="1.414027" material="shader: flat; side: double"></a-plane>
         <a-video src="#video-ring" position="0 0 0.01" width="1" height="1" material="shader: flat; side: double"></a-video>
       </a-entity>
 
       <a-entity class="ar-target" data-video="video-disk" data-target-height="1.413761" mindar-image-target="targetIndex: 2">
-        <a-plane color="#000" position="0 0 0.005" width="1" height="1.413761" material="shader: flat; side: double"></a-plane>
         <a-video src="#video-disk" position="0 0 0.01" width="1" height="1" material="shader: flat; side: double"></a-video>
       </a-entity>
     </a-scene>
